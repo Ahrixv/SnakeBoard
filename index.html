@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GG</title>
+</head>
+
+<body>
+    <div id="scoreBoard">Puntuación : 0</div>
+    <div class="gameOver" style="display:none">Perdedor</div>
+</body>
+
+</html>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        font-family: trebuchet ms;
+    }
+
+    .spaceRender {
+        margin: 0 auto;
+        border-collapse: collapse;
+        background: rgb(79, 243, 120);
+        zoom: 150%;
+        box-shadow: 20px 18px 25px 1px rgba(73, 189, 81, 0.89);
+    }
+
+    /*.trRender:nth-child(odd) .tdRender:nth-child(even),
+    .trRender:nth-child(even) .tdRender:nth-child(odd) {
+        background: green;
+    }*/
+
+    body {
+        width: 900px;
+        position: relative;
+        margin: 0 auto;
+    }
+
+    table {
+        box-shadow: 3px 3px 10px #999;
+    }
+
+    td {
+        width: 6px;
+        height: 6px;
+        cellpadding: 0;
+        cellspacing: 0;
+    }
+
+    td.snakeCell {
+        background: rgb(153, 0, 255);
+        -moz-border-radius: 5px;
+        box-shadow: 1px 1px 1px #aaa;
+        border-radius: 5px;
+        position: relative;
+    }
+
+    td.snakeHead {
+        background: rgb(68, 0, 255);
+        -moz-border-radius: 1px;
+        border-radius: 5px;
+        position: relative;
+    }
+
+    td.fruitCell {
+        background: rgb(255, 0, 76);
+        border: 1px solid rgba(0, 255, 149, 0.377);
+        border-radius: 5px;
+        box-shadow: 1px 1px 1px #aaa;
+        position: absolute;
+    }
+
+    #scoreBoard {
+        text-shadow: 2px 2px 1px #fff;
+        box-shadow: 0 -3px 5px #aaa;
+        width: 482px;
+        margin: 50px auto 0 auto;
+        border: 1px solid #ccc;
+        background: #eee;
+        font-weight: bold;
+        padding: 10px;
+    }
+
+    .gameOver {
+        padding: 25px 15px;
+        background: #555;
+        font-size: 30px;
+        color: white;
+    }
+</style>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script type="text/javascript">
+    var direction = 'right', speed = 100, ticker = null, fruitCell = [], score = 0, size = 50;
+    var snakeCells = [
+        [10, 14],
+    ];
+    var snakeHead = [10, 14];
+
+    function renderSnake() {
+        $('td').removeClass('snakeCell snakeHead');
+        for (var cell in snakeCells) {
+            $('tr').eq(snakeCells[cell][0]).find('td').eq(snakeCells[cell][1]).addClass('snakeCell');
+        }
+        $('tr').eq(snakeHead[0]).find('td').eq(snakeHead[1]).addClass('snakeHead');
+    }
+
+    function getFruitCell() {
+        fruitCell = [getRandomNumber($('tr').length), getRandomNumber($('tr:eq(0)>td').length)];
+    }
+
+    function gameOver() {
+        $('div.gameOver').show('fast', function () {
+            $(this).animate({ top: 250 }, 'slow');
+        });
+        clearInterval(ticker);
+    }
+
+    function updateSnakeCell() {
+        var snakeNewHead = [];
+        switch (direction) {
+            case 'right':
+                snakeNewHead = [snakeHead[0], snakeHead[1] + 1];
+                break;
+            case 'left':
+                snakeNewHead = [snakeHead[0], snakeHead[1] - 1];
+                break;
+            case 'up':
+                snakeNewHead = [snakeHead[0] - 1, snakeHead[1]];
+                break;
+            case 'down':
+                snakeNewHead = [snakeHead[0] + 1, snakeHead[1]];
+                break;
+        }
+        var newCell = { length: 0 }
+        if (snakeNewHead[0] < 0 || snakeNewHead[1] < 0) {
+            gameOver();
+            return;
+        } else if (snakeNewHead[0] >= size || snakeNewHead[1] >= size) {
+            gameOver();
+            return;
+        }
+        var newCell = $('tr').eq(snakeNewHead[0]).find('td').eq(snakeNewHead[1]);
+        if (newCell.length == 0) {
+            gameOver();
+        } else {
+            if (newCell.hasClass('snakeCell')) {
+                gameOver();
+            } else {
+                if (newCell.hasClass('fruitCell')) {
+                    snakeCells.push([]);
+                    getFruitCell();
+                    renderFruitCell();
+                    score += 100;
+                    $('#scoreBoard').html('Puntuación : ' + score);
+                    speed = speed - 10 > 5 ? speed - 10 : speed;
+                    clearInterval(ticker);
+                    startGame();
+                }
+                for (var i = (snakeCells.length - 1); i > 0; i--) {
+                    snakeCells[i] = snakeCells[i - 1];
+                }
+                snakeCells[0] = snakeHead = snakeNewHead;
+                renderSnake();
+            }
+        }
+    }
+
+    function getRandomNumber(limit) {
+        return parseInt(Math.random() * limit % limit);
+    }
+
+    function getNewDirection(keyCode) {
+        var codes = {
+            37: 'left',
+            38: 'up',
+            39: 'right',
+            40: 'down'
+        };
+
+        if (typeof codes[keyCode] != 'undefined') {
+            var newDirection = codes[keyCode], changeDirection = true;
+            switch (direction) {
+                case 'up':
+                    changeDirection = newDirection != 'down';
+                    break;
+                case 'down':
+                    changeDirection = newDirection != 'up';
+                    break;
+                case 'right':
+                    changeDirection = newDirection != 'left';
+                    break;
+                case 'left':
+                    changeDirection = newDirection != 'right';
+                    break;
+            }
+            direction = changeDirection ? newDirection : direction;
+        }
+    }
+
+    function renderBoard() {
+        var rowhtml = '';
+        for (var i = 0; i < size; i++) {
+            rowhtml += '<td class="tdRender" cellpadding="0" cellspacing="0"></td>'
+        }
+        html = [];
+        for (var i = 0; i < size; i++) {
+            html.push('<tr class="trRender" cellpadding="0" cellspacing="0">' + rowhtml + '</tr>');
+        }
+        $(document.body).append('<table class="spaceRender">' + html.join('\n') + '</table>');
+        getFruitCell();
+    }
+
+    function renderFruitCell() {
+        $('td').removeClass('fruitCell');
+        $('tr').eq(fruitCell[0]).find('td').eq(fruitCell[1]).addClass('fruitCell');
+    }
+
+    function startGame() {
+        ticker = setInterval(updateSnakeCell, speed);
+    }
+
+    $(document).ready(function () {
+        renderBoard();
+        renderFruitCell();
+        $(document).bind('keydown', function (e) {
+            getNewDirection(e.keyCode);
+        });
+        startGame();
+    });
+</script>
